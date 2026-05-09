@@ -28,6 +28,11 @@ env/
 # Claude Code
 .claude/
 
+# Node
+node_modules/
+.next/
+out/
+
 # Data / secrets
 data/*.pdf
 data/*.csv
