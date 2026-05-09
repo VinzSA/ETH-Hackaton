@@ -3,7 +3,7 @@ import type { RawSource } from "./types";
 // Legacy export, kept for backward compat in tests / older callers.
 export const demoDocuments: { title: string; text: string }[] = [
   {
-    title: "ED Triage Note — 02:14",
+    title: "ED Triage Note · 02:14",
     text: "67-year-old male brought in after mechanical fall at home. Patient is confused, GCS 13, unable to provide reliable history. Past history per chart includes atrial fibrillation. Family reports a known penicillin allergy with rash.",
   },
   {
@@ -34,7 +34,7 @@ export const demoSources: RawSource[] = [
   {
     kind: "note",
     id: "D1",
-    title: "ED Triage Note — 02:14",
+    title: "ED Triage Note · 02:14",
     text: demoDocuments[0].text,
   },
   {

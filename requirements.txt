@@ -1,0 +1,27 @@
+# Core API
+anthropic==0.100.0
+fastapi==0.136.1
+uvicorn==0.46.0
+python-multipart==0.0.27
+pydantic==2.13.4
+starlette==1.0.0
+
+# PDF extraction
+PyMuPDF==1.27.2.3
+pytesseract==0.3.13
+pdfminer.six==20251230
+
+# NLP / biomedical
+spacy==3.7.5
+scispacy==0.6.2
+langdetect==1.0.9
+
+# Medical coding
+simple_icd_10==2.1.1
+
+# Utilities
+httpx==0.28.1
+numpy==1.26.4
+scikit-learn==1.8.0
+requests==2.33.1
+tqdm==4.67.3

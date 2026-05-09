@@ -68,6 +68,10 @@
   --color-risk-critical: var(--risk-critical);
   --color-risk-critical-bg: var(--risk-critical-bg);
   --color-highlight: var(--highlight);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-glow: var(--primary-glow);
+  --color-teal: var(--teal);
+  --color-teal-soft: var(--teal-soft);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
@@ -103,6 +107,19 @@
   --risk-critical: oklch(0.5 0.23 25);
   --risk-critical-bg: oklch(0.96 0.06 25);
   --highlight: oklch(0.93 0.14 95);
+
+  /* Brand & elevation */
+  --primary-soft: oklch(0.96 0.025 250);
+  --primary-glow: oklch(0.7 0.16 230);
+  --teal: oklch(0.62 0.11 200);
+  --teal-soft: oklch(0.96 0.03 200);
+  --gradient-primary: linear-gradient(135deg, oklch(0.55 0.16 250), oklch(0.65 0.13 215));
+  --gradient-surface: linear-gradient(180deg, oklch(0.99 0.005 240), oklch(0.97 0.012 235));
+  --gradient-warn: linear-gradient(135deg, oklch(0.62 0.16 50), oklch(0.7 0.16 35));
+  --gradient-danger: linear-gradient(135deg, oklch(0.55 0.22 25), oklch(0.5 0.23 15));
+  --gradient-safe: linear-gradient(135deg, oklch(0.6 0.14 165), oklch(0.62 0.12 195));
+  --shadow-card: 0 1px 2px oklch(0.22 0.04 250 / 0.04), 0 8px 24px -12px oklch(0.22 0.04 250 / 0.12);
+  --shadow-elevated: 0 1px 2px oklch(0.22 0.04 250 / 0.05), 0 20px 40px -20px oklch(0.55 0.16 250 / 0.25);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
@@ -171,4 +188,9 @@
   .tabular-nums {
     font-variant-numeric: tabular-nums;
   }
+}
+
+@keyframes anasafe-bar {
+  0%   { transform: translateX(-110%); }
+  100% { transform: translateX(360%); }
 }

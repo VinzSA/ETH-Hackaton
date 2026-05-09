@@ -1,0 +1,12 @@
+{
+  "patient": {
+    "name": "Maria Sanchez",
+    "age": 38,
+    "sex": "F",
+    "blood_type": "O+",
+    "surgery_type": "Elective cholecystectomy",
+    "urgency": "elective"
+  },
+  "expected_verdict": "OK",
+  "expected_cautions": []
+}

@@ -58,6 +58,9 @@ class PatientRecord:
     warnings: list[str] = field(default_factory=list)
     overall_confidence: float = 1.0
 
+    # Source documents kept for Bayesian scoring and FHIR derivedFrom links
+    source_documents: list[ExtractedDocument] = field(default_factory=list)
+
     def to_dict(self) -> dict:
         import dataclasses, json
         return json.loads(json.dumps(dataclasses.asdict(self), default=str))
@@ -110,6 +113,7 @@ def merge_documents(
     mean_conf = sum(d.extraction_confidence for d in sorted_docs) / len(sorted_docs)
     conflict_penalty = min(0.2, len(record.conflicts) * 0.05)
     record.overall_confidence = round(max(0.0, mean_conf - conflict_penalty), 2)
+    record.source_documents   = sorted_docs
 
     return record
 

@@ -78,6 +78,7 @@ def process_text(
         document_id=doc_id,
         document_type=document_type,  # type: ignore[arg-type]
         document_date=doc_date,
+        raw_text=(text[:16000] if text else None),
         language_detected=lang,
         medications=medications,
         diagnoses=diagnoses,

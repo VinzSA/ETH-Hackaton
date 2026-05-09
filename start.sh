@@ -8,22 +8,31 @@ if [ -f ".env" ]; then
     export $(grep -v '^#' .env | xargs)
 fi
 
-if [ -z "$ANTHROPIC_API_KEY" ]; then
-    echo "ERROR: ANTHROPIC_API_KEY not set. Add it to .env"
-    exit 1
+if [ -z "${ANTHROPIC_API_KEY:-}" ]; then
+    echo "WARN: ANTHROPIC_API_KEY is not set — document extraction/classifier calls will fail until you export it or add .env."
 fi
 
-echo "Starting backend on http://localhost:8000 ..."
-er-preop-brief/.venv/bin/uvicorn main:app --reload --port 8000 &
+if [ ! -d ".venv" ]; then
+    echo "Creating .venv ..."
+    python3 -m venv .venv
+    .venv/bin/python -m pip install -q --upgrade pip
+    .venv/bin/python -m pip install -q -r requirements.txt
+fi
+
+# Default 8010 — change if busy: PORT=8020 ./start.sh
+BACKEND_PORT="${PORT:-${BACKEND_PORT:-8010}}"
+
+echo "Starting backend on http://localhost:${BACKEND_PORT} ..."
+.venv/bin/python -m uvicorn main:app --reload --host 127.0.0.1 --port "${BACKEND_PORT}" &
 BACKEND_PID=$!
 
-echo "Starting frontend on http://localhost:5173 ..."
-cd src/frontend && npm run dev &
+echo "Starting frontend on http://localhost:8080 ..."
+cd src/frontend && VITE_BACKEND_URL="http://127.0.0.1:${BACKEND_PORT}" npm run dev &
 FRONTEND_PID=$!
 
 echo ""
-echo "Backend:  http://localhost:8000"
-echo "Frontend: http://localhost:5173"
+echo "Backend:  http://localhost:${BACKEND_PORT}"
+echo "Frontend: http://localhost:8080  (VITE_BACKEND_URL=http://127.0.0.1:${BACKEND_PORT})"
 echo ""
 echo "Press Ctrl+C to stop both servers."
 

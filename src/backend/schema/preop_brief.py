@@ -9,7 +9,7 @@ class SourceRef(BaseModel):
     page: int
     char_start: int
     char_end: int
-    snippet: str  # 50 chars around the extraction for UI display
+    snippet: str  # sentence-bounded excerpt around the extraction (≤320 chars)
 
 class Medication(BaseModel):
     name: str
@@ -103,3 +103,4 @@ class ExtractedDocument(BaseModel):
     
     extraction_confidence: float = Field(ge=0, le=1)
     extraction_warnings: list[str] = []
+    raw_text: Optional[str] = None

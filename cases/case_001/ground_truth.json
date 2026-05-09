@@ -1,0 +1,12 @@
+{
+  "patient": {
+    "name": "Robert Hayes",
+    "age": 67,
+    "sex": "M",
+    "blood_type": "A+",
+    "surgery_type": "Hip fracture ORIF",
+    "urgency": "emergent"
+  },
+  "expected_verdict": "NOT OK",
+  "expected_cautions": ["anticoagulation", "airway"]
+}

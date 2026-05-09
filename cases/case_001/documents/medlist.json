@@ -1,0 +1,8 @@
+{
+  "medications": [
+    { "name": "Apixaban", "dose": "5 mg", "frequency": "twice daily", "indication": "atrial fibrillation", "last_dose_at": "yesterday 18:00" },
+    { "name": "Metoprolol succinate", "dose": "50 mg", "frequency": "once daily" },
+    { "name": "Atorvastatin", "dose": "40 mg", "frequency": "nightly" }
+  ],
+  "allergies": [{ "substance": "penicillin", "reaction": "rash" }]
+}

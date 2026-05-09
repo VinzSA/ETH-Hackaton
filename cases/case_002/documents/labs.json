@@ -1,0 +1,8 @@
+{
+  "labs": [
+    { "test": "hemoglobin",  "value": 13.4, "unit": "g/dL"   },
+    { "test": "creatinine",  "value": 0.8,  "unit": "mg/dL"  },
+    { "test": "potassium",   "value": 4.1,  "unit": "mmol/L" },
+    { "test": "INR",         "value": 1.0                    }
+  ]
+}

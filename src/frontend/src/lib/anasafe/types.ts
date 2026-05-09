@@ -53,7 +53,13 @@ export interface SourceDocument {
 }
 
 export interface PreAnesthesiaState {
-  allergies: { substance: string; reaction?: string; severity?: string; source_id: SourceId }[];
+  allergies: {
+    substance: string;
+    reaction?: string;
+    severity?: string;
+    source_id: SourceId;
+    source_snippet?: string;
+  }[];
   anticoagulants: {
     drug: string;
     dose?: string;
@@ -61,16 +67,23 @@ export interface PreAnesthesiaState {
     last_dose?: string;
     last_dose_hours_ago?: number;
     source_id: SourceId;
+    source_snippet?: string;
   }[];
-  current_medications: { drug: string; dose?: string; frequency?: string; source_id: SourceId }[];
-  airway_flags: { flag: string; source_id: SourceId }[];
-  prior_anesthesia_complications: { event: string; source_id: SourceId }[];
-  cardiac_risks: { condition: string; source_id: SourceId }[];
-  pulmonary_risks: { condition: string; source_id: SourceId }[];
-  renal_metabolic_risks: { condition: string; source_id: SourceId }[];
-  labs: { test: string; value: number; unit: string; source_id: SourceId }[];
-  implants_or_devices: { device: string; source_id: SourceId }[];
-  npo_status?: { last_intake: string; substance?: string; source_id: SourceId };
+  current_medications: {
+    drug: string;
+    dose?: string;
+    frequency?: string;
+    source_id: SourceId;
+    source_snippet?: string;
+  }[];
+  airway_flags: { flag: string; source_id: SourceId; source_snippet?: string }[];
+  prior_anesthesia_complications: { event: string; source_id: SourceId; source_snippet?: string }[];
+  cardiac_risks: { condition: string; source_id: SourceId; source_snippet?: string }[];
+  pulmonary_risks: { condition: string; source_id: SourceId; source_snippet?: string }[];
+  renal_metabolic_risks: { condition: string; source_id: SourceId; source_snippet?: string }[];
+  labs: { test: string; value: number; unit: string; source_id: SourceId; source_snippet?: string }[];
+  implants_or_devices: { device: string; source_id: SourceId; source_snippet?: string }[];
+  npo_status?: { last_intake: string; substance?: string; source_id: SourceId; source_snippet?: string };
 }
 
 export type RiskLevel = "low" | "moderate" | "high" | "critical";
