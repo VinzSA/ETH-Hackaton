@@ -120,19 +120,22 @@ def process_pdfs(
 
 
 def process_patient(
-    sources: list[str | Path | bytes | str],
+    sources: list[str | Path | bytes] | None = None,
     patient_id: str | None = None,
     texts: list[str] | None = None,
+    wearable_path: str | bytes | None = None,
 ):
     """
-    Full patient pipeline: multiple PDFs (or raw texts) → merged PatientRecord.
-    This is the primary entry point for the backend.
+    Full patient pipeline: PDFs + optional wearable ZIP → merged PatientRecord.
+    Primary entry point for the backend.
 
     Usage:
         record = process_patient(pdf_paths, patient_id="P001")
-        record = process_patient([], texts=[text1, text2, text3])
+        record = process_patient([], texts=[text1, text2], wearable_path="fitbit.zip")
     """
-    from src.ingestion.merger import merge_documents, PatientRecord
+    from src.ingestion.merger import apply_wearable_signals, merge_documents
+    from src.ingestion.wearable_reader import read_wearable_zip
+    from src.extractors.wearable_extractor import extract_wearable_signals
 
     documents: list[ExtractedDocument] = []
 
@@ -144,7 +147,14 @@ def process_patient(
             doc = process_text(text, document_id=f"text_{i}")
             documents.append(doc)
 
-    return merge_documents(documents, patient_id=patient_id)
+    record = merge_documents(documents, patient_id=patient_id)
+
+    if wearable_path:
+        raw = read_wearable_zip(wearable_path)
+        signals = extract_wearable_signals(raw)
+        apply_wearable_signals(record, signals)
+
+    return record
 
 
 def _extract_by_type(text, doc_id, document_type):

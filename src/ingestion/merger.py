@@ -37,6 +37,11 @@ class PatientRecord:
     # Temporal index: doc_id → document_date (ISO string or None)
     document_timeline: dict[str, str | None] = field(default_factory=dict)
 
+    # Wearable signals (optional — only present if a ZIP was uploaded)
+    wearable_osa_signal: dict | None = None          # OSASignal serialised
+    wearable_functional_capacity: dict | None = None  # FunctionalCapacity serialised
+    wearable_hr_trend: dict | None = None             # HRTrend serialised
+
     # Merged clinical entities
     medications: list[Medication] = field(default_factory=list)
     diagnoses: list[Diagnosis] = field(default_factory=list)
@@ -287,6 +292,85 @@ def _safety_gap_checks(record: PatientRecord) -> list[str]:
         warnings.append("SAFETY: Cardiac device implant found — confirm device type and last check")
 
     return warnings
+
+
+def apply_wearable_signals(record: PatientRecord, signals) -> None:
+    """
+    Merge wearable signals into an existing PatientRecord in-place.
+    `signals` is a WearableSignals object from wearable_extractor.py.
+    Adds wearable fields and fires cross-source gap rules.
+    """
+    import dataclasses
+
+    if signals.osa:
+        record.wearable_osa_signal = dataclasses.asdict(signals.osa)
+        _check_osa_gaps(record, signals.osa)
+
+    if signals.functional_capacity:
+        record.wearable_functional_capacity = dataclasses.asdict(signals.functional_capacity)
+        _check_functional_capacity_gaps(record, signals.functional_capacity)
+
+    if signals.hr_trend:
+        record.wearable_hr_trend = dataclasses.asdict(signals.hr_trend)
+        if signals.hr_trend.trend == "rising":
+            record.warnings.append(
+                f"WEARABLE: Resting HR rising "
+                f"({signals.hr_trend.slope_bpm_per_day:+.2f} bpm/day over "
+                f"{signals.hr_trend.days_analyzed} days) — possible cardiac decompensation"
+            )
+
+
+def _check_osa_gaps(record: PatientRecord, osa) -> None:
+    if not osa.probable_osa:
+        return
+
+    # Rule 1: probable OSA but no CPAP/BiPAP in medication or anesthesia records
+    cpap_keywords = {"cpap", "bipap", "apap", "continuous positive", "sleep apnea"}
+    cpap_in_meds = any(
+        any(kw in _normalize_str(m.name) for kw in cpap_keywords)
+        for m in record.medications
+    )
+    cpap_in_anesthesia = any(
+        a.airway_notes and any(kw in a.airway_notes.lower() for kw in cpap_keywords)
+        for a in record.anesthesia_history
+    )
+    osa_in_diagnoses = any(
+        "apnea" in _normalize_str(d.description) or "osa" in _normalize_str(d.description)
+        for d in record.diagnoses
+    )
+
+    if not cpap_in_meds and not cpap_in_anesthesia:
+        if osa_in_diagnoses:
+            record.warnings.append(
+                f"WEARABLE + CLINICAL: OSA diagnosed but no CPAP/BiPAP found in records "
+                f"(wearable: {osa.nights_with_dips}/{osa.nights_analyzed} nights with SpO₂ dips)"
+            )
+        else:
+            record.warnings.append(
+                f"WEARABLE: Probable OSA signal — {osa.nights_with_dips}/{osa.nights_analyzed} "
+                f"nights with SpO₂<90% dips (confidence {osa.confidence:.0%}). "
+                f"No OSA diagnosis or CPAP found in clinical records — flag for anaesthesiologist"
+            )
+
+
+def _check_functional_capacity_gaps(record: PatientRecord, fc) -> None:
+    # Rule 2: wearable says high capacity but ASA ≥ III — possible ASA overestimate
+    asa_scores = [a.asa_score for a in record.anesthesia_history if a.asa_score is not None]
+    if asa_scores and fc.level == "high":
+        max_asa = max(asa_scores)
+        if max_asa >= 3:
+            record.warnings.append(
+                f"WEARABLE ↔ CLINICAL CONFLICT: Wearable shows high functional capacity "
+                f"({int(fc.avg_daily_steps_30d):,} steps/day) but prior ASA score is {max_asa} — "
+                f"possible ASA overestimate; reassess"
+            )
+
+    # Rule 3: low functional capacity is a direct anaesthesia risk flag
+    if fc.level == "low":
+        record.warnings.append(
+            f"WEARABLE: Low functional capacity — {int(fc.avg_daily_steps_30d):,} steps/day avg "
+            f"(<3,500 threshold). Equivalent to <4 METs; increased perioperative risk."
+        )
 
 
 # ── Utilities ────────────────────────────────────────────────────────────────
