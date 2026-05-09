@@ -3,11 +3,14 @@ Main extraction pipeline.
 
 Flow:
   PDF(s) / raw text
+    → language detection + translation (if non-English)
     → parallel ingestion (pdf_reader)
+    → document date extraction
     → document classifier (Claude Haiku)
     → specialized extractor (per document type)
     → normalizers (RxNorm, ICD-10)
     → ExtractedDocument (Pydantic, fully populated)
+    → merger: list[ExtractedDocument] → PatientRecord
     → JSON output → backend picks up
 """
 import asyncio
@@ -28,6 +31,8 @@ from src.ingestion.pdf_reader import PageText, extract_pages, full_text
 from src.normalizers.diagnosis_normalizer import lookup_icd10
 from src.normalizers.medication_normalizer import lookup_drug
 from src.schema.preop_brief import ExtractedDocument
+from src.utils.date_extractor import extract_document_date
+from src.utils.language import detect_and_translate
 
 
 def process_text(
@@ -41,32 +46,39 @@ def process_text(
     """
     doc_id = document_id or str(uuid.uuid4())
 
-    # 1. Classify
+    # 1. Language detection + translation
+    translated_text, lang = detect_and_translate(text)
+
+    # 2. Extract document date from header
+    doc_date = extract_document_date(translated_text)
+
+    # 3. Classify
     if document_type is None:
-        document_type = classify(text)
+        document_type = classify(translated_text)
 
-    # 2. Route to specialized extractors
+    # 4. Route to specialized extractors
     medications, diagnoses, allergies, procedures, implants, labs, anesthesia_history, cardiac = \
-        _extract_by_type(text, doc_id, document_type)
+        _extract_by_type(translated_text, doc_id, document_type)
 
-    # 3. Normalize medications (RxNorm + ATC)
+    # 5. Normalize medications (RxNorm + ATC)
     for med in medications:
         codes = lookup_drug(med.name)
         med.rxnorm_code = codes.get("rxnorm")
         med.atc_code = codes.get("atc")
 
-    # 4. Normalize diagnoses (ICD-10)
+    # 6. Normalize diagnoses (ICD-10)
     for diag in diagnoses:
         if not diag.icd10_code:
             diag.icd10_code = lookup_icd10(diag.description)
 
-    # 5. Compute confidence and warnings
-    confidence, warnings = _assess_quality(text, medications, diagnoses, labs, document_type)
+    # 7. Compute confidence and warnings
+    confidence, warnings = _assess_quality(translated_text, medications, diagnoses, labs, document_type)
 
     return ExtractedDocument(
         document_id=doc_id,
         document_type=document_type,  # type: ignore[arg-type]
-        language_detected="en",
+        document_date=doc_date,
+        language_detected=lang,
         medications=medications,
         diagnoses=diagnoses,
         allergies=allergies,
@@ -105,6 +117,34 @@ def process_pdfs(
         return await asyncio.gather(*tasks)
 
     return asyncio.run(_run())
+
+
+def process_patient(
+    sources: list[str | Path | bytes | str],
+    patient_id: str | None = None,
+    texts: list[str] | None = None,
+):
+    """
+    Full patient pipeline: multiple PDFs (or raw texts) → merged PatientRecord.
+    This is the primary entry point for the backend.
+
+    Usage:
+        record = process_patient(pdf_paths, patient_id="P001")
+        record = process_patient([], texts=[text1, text2, text3])
+    """
+    from src.ingestion.merger import merge_documents, PatientRecord
+
+    documents: list[ExtractedDocument] = []
+
+    if sources:
+        documents.extend(process_pdfs(sources))
+
+    if texts:
+        for i, text in enumerate(texts):
+            doc = process_text(text, document_id=f"text_{i}")
+            documents.append(doc)
+
+    return merge_documents(documents, patient_id=patient_id)
 
 
 def _extract_by_type(text, doc_id, document_type):

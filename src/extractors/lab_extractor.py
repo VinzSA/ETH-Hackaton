@@ -51,7 +51,7 @@ def extract_labs(
         try:
             name = item.get("test_name", "").strip()
             value = float(item["value"])
-            unit = item.get("unit", "").strip()
+            unit = (item.get("unit") or "").strip()
             raw_text = item.get("raw_text", name)
 
             source = make_source_ref(
